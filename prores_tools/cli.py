@@ -1,7 +1,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from . import converter, utils, reporter, deleter
+from . import converter, utils, reporter, trasher
 
 app = typer.Typer(rich_markup_mode="markdown")
 console = Console()
@@ -32,7 +32,7 @@ def cleanup(
     """
     console.print(f"Scanning [cyan]{scan_dir}[/cyan] for files to clean up...")
     with console.status("[bold green]Scanning files...", spinner="dots"):
-        files_to_trash = deleter.find_files_to_cleanup(scan_dir)
+        files_to_trash = trasher.find_files_to_cleanup(scan_dir)
 
     if not files_to_trash:
         console.print("[bold green]No matching files found to move to Trash.[/bold green]")
@@ -43,7 +43,7 @@ def cleanup(
         console.print(f"- {f.relative_to(scan_dir)}")
     
     console.print("\n[bold red]Moving files to Trash immediately...[/bold red]")
-    for result in deleter.move_files_to_trash(files_to_trash):
+    for result in trasher.move_files_to_trash(files_to_trash):
         console.print(result)
     
     console.print("\n[bold green]Process complete![/bold green]")

@@ -3,6 +3,17 @@ import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
+def format_size(size_bytes):
+    """Converts bytes to a human-readable string (GB, MB, KB)."""
+    if size_bytes >= 1024**3:
+        return f"{size_bytes / 1024**3:.2f} GB"
+    elif size_bytes >= 1024**2:
+        return f"{size_bytes / 1024**2:.2f} MB"
+    elif size_bytes >= 1024:
+        return f"{size_bytes / 1024:.2f} KB"
+    else:
+        return f"{size_bytes} Bytes"
+
 def is_prores(video_path: str) -> bool:
     """Check if a video file is encoded with ProRes."""
     if not shutil.which("ffprobe"):
@@ -66,7 +77,8 @@ def find_prores_files_fast(scan_dir: Path, folders_to_ignore: list[str] | None =
     def _check_file(path):
         if is_prores(path):
             has_alpha = has_alpha_channel(path)
-            return {"path": path, "alpha": has_alpha}
+            size = path.stat().st_size
+            return {"path": path, "alpha": has_alpha, "size": size}
         return None
 
     with ThreadPoolExecutor() as executor:
