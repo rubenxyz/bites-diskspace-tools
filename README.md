@@ -6,8 +6,8 @@ A collection of utilities for converting and managing ProRes video files.
 
 This project uses Python and requires `ffmpeg` to be installed and available in your system's PATH.
 
-1.  **Install ffmpeg:**
-    If you don't have ffmpeg installed, you can use Homebrew on macOS:
+1.  **Install Dependencies:**
+    If you don't have `ffmpeg` installed, you can use Homebrew on macOS:
     ```sh
     brew install ffmpeg
     ```
@@ -53,7 +53,7 @@ prores-tool convert /path/to/your/videos
 
 ### Generate a Report
 
-This command recursively scans a directory and creates a Markdown file (`prores_report.md`) detailing all the ProRes files it finds.
+This command recursively scans a directory and creates a PDF file (`prores_report.pdf`) detailing all the ProRes files it finds.
 
 ```sh
 prores-tool report /path/to/your/project_folder

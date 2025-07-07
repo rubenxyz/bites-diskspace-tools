@@ -4,11 +4,15 @@ version = "0.1.0"
 description = "A set of tools to convert and manage ProRes video files."
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
+include = ["prores_tools/report_style.css"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 typer = {extras = ["rich"], version = "^0.9.0"}
 rich = "^13.0.0"
+weasyprint = "57.2"
+pydyf = "0.7.0"
+setuptools = "^68.0.0"
 
 [build-system]
 requires = ["poetry-core"]

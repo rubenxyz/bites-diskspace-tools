@@ -26,10 +26,10 @@ def report(
     target_dir: Path = typer.Argument(..., help="Directory to scan for a ProRes report.", exists=True, file_okay=False, dir_okay=True, readable=True)
 ):
     """
-    Generates a Markdown report of all ProRes files in a directory tree.
+    Generates a PDF report of all ProRes files in a directory tree.
     """
-    console.print(f"Generating ProRes report for [cyan]{target_dir}[/cyan]...")
-    with console.status("[bold green]Scanning files...", spinner="dots"):
+    console.print(f"Generating ProRes PDF report for [cyan]{target_dir}[/cyan]...")
+    with console.status("[bold green]Scanning files and building report...", spinner="dots"):
         report_path = reporter.generate_report(target_dir)
     console.print(f"[bold green]✓ Report successfully created at:[/bold green] [cyan]{report_path}[/cyan]")
 
