@@ -14,6 +14,24 @@ def format_size(size_bytes):
     else:
         return f"{size_bytes} Bytes"
 
+def find_files_by_extension(scan_dir: Path, extension: str, folders_to_ignore: list[str] | None = None):
+    """
+    Scans a directory tree to find all files with a given extension,
+    optionally skipping special folders.
+    """
+    if folders_to_ignore is None:
+        folders_to_ignore = []
+
+    found_files = []
+    all_files = scan_dir.rglob(f'*{extension}')
+
+    for p in all_files:
+        if p.is_file() and not any(part in p.parts for part in folders_to_ignore):
+            size = p.stat().st_size
+            found_files.append({"path": p, "size": size, "type": extension})
+    
+    return found_files
+
 def is_prores(video_path: str) -> bool:
     """Check if a video file is encoded with ProRes."""
     if not shutil.which("ffprobe"):
@@ -78,7 +96,7 @@ def find_prores_files_fast(scan_dir: Path, folders_to_ignore: list[str] | None =
         if is_prores(path):
             has_alpha = has_alpha_channel(path)
             size = path.stat().st_size
-            return {"path": path, "alpha": has_alpha, "size": size}
+            return {"path": path, "alpha": has_alpha, "size": size, "type": "prores"}
         return None
 
     with ThreadPoolExecutor() as executor:
