@@ -46,7 +46,7 @@ prores-tool convert /path/to/your/videos
 2.  A valid ProRes file (without an alpha channel) is moved into `_PROCESSING`.
 3.  A new H.264 file is created in its original place.
 4.  Upon successful conversion, the original file is moved from `_PROCESSING` to `_CONVERTED` for archival.
-5.  ProRes files with alpha channels are skipped and left in their original location.
+5.  ProRes files with alpha channels are automatically moved into a new `_ALPHA` subfolder.
 
 **Options:**
 *   `--workers <number>` or `-w <number>`: Set the number of parallel conversion jobs (default is 4).

@@ -55,6 +55,7 @@ def run_conversion(input_dir: Path, max_workers: int = 4):
 
     processing_dir = input_dir / "_PROCESSING"
     converted_dir = input_dir / "_CONVERTED"
+    alpha_dir = input_dir / "_ALPHA"
     processing_dir.mkdir(exist_ok=True)
     converted_dir.mkdir(exist_ok=True)
     
@@ -66,7 +67,12 @@ def run_conversion(input_dir: Path, max_workers: int = 4):
     files_to_process = []
     for f in prores_files:
         if has_alpha_channel(f):
-            yield f"Skipped (has alpha channel): {f.name}"
+            alpha_dir.mkdir(exist_ok=True)
+            try:
+                shutil.move(str(f), str(alpha_dir / f.name))
+                yield f"Moved to _ALPHA (has alpha channel): {f.name}"
+            except Exception as e:
+                yield f"Error moving {f.name} to _ALPHA: {e}"
         else:
             files_to_process.append(f)
 
