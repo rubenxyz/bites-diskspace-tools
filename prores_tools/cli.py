@@ -8,16 +8,16 @@ console = Console()
 
 @app.command()
 def convert(
-    input_dir: Path = typer.Argument(..., help="Directory containing ProRes files to convert.", exists=True, file_okay=False, dir_okay=True, readable=True),
+    scan_dir: Path = typer.Argument(..., help="Directory to scan for ProRes files to convert.", exists=True, file_okay=False, dir_okay=True, readable=True),
     workers: int = typer.Option(4, "--workers", "-w", help="Number of videos to process in parallel.")
 ):
     """
-    Converts ProRes files to H.264 in place, managing originals in subfolders.
+    Recursively converts ProRes files to H.264, managing originals in subfolders.
     """
-    console.print(f"Starting conversion process in [cyan]{input_dir}[/cyan]...")
-    console.print("Originals will be moved to [bold]_CONVERTED[/bold] upon success.")
+    console.print(f"Starting recursive conversion scan in [cyan]{scan_dir}[/cyan]...")
+    console.print("Originals will be moved to a [bold]_CONVERTED[/bold] subfolder in their respective directories.")
     with console.status("[bold green]Processing videos...", spinner="dots") as status:
-        for result in converter.run_conversion(input_dir, workers):
+        for result in converter.run_conversion(scan_dir, workers):
             console.print(result)
     console.print("[bold green]Conversion process complete![/bold green]")
 
