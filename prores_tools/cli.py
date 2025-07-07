@@ -40,12 +40,7 @@ def remove_prv(
     for f in files_to_delete:
         console.print(f"- {f.relative_to(scan_dir)}")
     
-    confirm = typer.confirm(
-        "Are you sure you want to move these files to the Trash?", 
-        abort=True
-    )
-    
-    console.print("\n[bold]Moving files to Trash...[/bold]")
+    console.print("\n[bold red]Moving files to Trash immediately...[/bold red]")
     for result in deleter.delete_files(files_to_delete):
         console.print(result)
     

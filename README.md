@@ -60,8 +60,8 @@ This command recursively finds and moves ProRes files to the system's Trash if t
 prores-tool remove-prv /path/to/your/project_folder
 ```
 
-> [!NOTE]
-> This command moves files to the Trash, it does not delete them permanently. A confirmation prompt will appear before any action is taken.
+> [!WARNING]
+> This command is non-interactive and will immediately move all matching files to the Trash without a confirmation prompt. Use with caution.
 
 ### Generate a Report
 
