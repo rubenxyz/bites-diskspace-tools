@@ -48,14 +48,17 @@ def has_alpha_channel(video_path: str) -> bool:
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
-def find_prores_files_fast(scan_dir: Path):
+def find_prores_files_fast(scan_dir: Path, folders_to_ignore: list[str] | None = None):
     """
     Scans a directory tree in parallel to quickly find all ProRes files,
-    skipping special folders.
+    optionally skipping special folders.
     """
+    if folders_to_ignore is None:
+        folders_to_ignore = []
+
     all_mov_files = [
         p for p in scan_dir.rglob("*.mov") 
-        if p.is_file() and not any(part in p.parts for part in ['_PROCESSING', '_CONVERTED', '_ALPHA'])
+        if p.is_file() and not any(part in p.parts for part in folders_to_ignore)
     ]
     
     prores_files = []

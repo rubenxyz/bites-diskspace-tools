@@ -21,27 +21,29 @@ def convert(
             console.print(result)
     console.print("[bold green]Conversion process complete![/bold green]")
 
-@app.command(help="Moves ProRes files in folders ending with .PRV to the Trash.")
-def remove_prv(
-    scan_dir: Path = typer.Argument(..., help="Directory to scan for .PRV folders.", exists=True, file_okay=False, dir_okay=True, readable=True),
+@app.command(help="Moves specified preview and converted files to the Trash.")
+def cleanup(
+    scan_dir: Path = typer.Argument(..., help="Directory to scan for files to clean up.", exists=True, file_okay=False, dir_okay=True, readable=True),
 ):
     """
-    Finds and moves ProRes files (without alpha) in subfolders ending with .PRV to the Trash.
+    Finds and moves two types of files to the Trash:
+    - ProRes files in folders ending with .PRV
+    - All ProRes files inside any `_CONVERTED` folder
     """
-    console.print(f"Scanning [cyan]{scan_dir}[/cyan] for ProRes files in .PRV folders...")
+    console.print(f"Scanning [cyan]{scan_dir}[/cyan] for files to clean up...")
     with console.status("[bold green]Scanning files...", spinner="dots"):
-        files_to_delete = deleter.remove_prv_files(scan_dir)
+        files_to_trash = deleter.find_files_to_cleanup(scan_dir)
 
-    if not files_to_delete:
+    if not files_to_trash:
         console.print("[bold green]No matching files found to move to Trash.[/bold green]")
         return
 
-    console.print(f"[bold yellow]Found {len(files_to_delete)} file(s) to move to Trash:[/bold yellow]")
-    for f in files_to_delete:
+    console.print(f"[bold yellow]Found {len(files_to_trash)} file(s) to move to Trash:[/bold yellow]")
+    for f in sorted(files_to_trash):
         console.print(f"- {f.relative_to(scan_dir)}")
     
     console.print("\n[bold red]Moving files to Trash immediately...[/bold red]")
-    for result in deleter.delete_files(files_to_delete):
+    for result in deleter.move_files_to_trash(files_to_trash):
         console.print(result)
     
     console.print("\n[bold green]Process complete![/bold green]")

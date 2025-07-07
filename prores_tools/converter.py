@@ -50,10 +50,11 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("ffmpeg not found. Please install ffmpeg.")
 
-    all_prores_files = find_prores_files_fast(scan_dir)
+    folders_to_skip = ['_PROCESSING', '_CONVERTED', '_ALPHA']
+    all_prores_files = find_prores_files_fast(scan_dir, folders_to_ignore=folders_to_skip)
 
     if not all_prores_files:
-        yield "No ProRes .mov files found to convert."
+        yield "No new ProRes .mov files found to convert."
         return
 
     files_to_process = []
@@ -71,7 +72,7 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
             files_to_process.append(f)
 
     if not files_to_process:
-        yield "No suitable ProRes files (without alpha) found to convert."
+        yield "No new suitable ProRes files (without alpha) found to convert."
         return
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:

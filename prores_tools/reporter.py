@@ -10,7 +10,8 @@ def generate_report(target_dir: Path):
     """
     report_path = target_dir / "prores_report.pdf"
     
-    prores_files = find_prores_files_fast(target_dir)
+    folders_to_skip = ['_PROCESSING']
+    prores_files = find_prores_files_fast(target_dir, folders_to_ignore=folders_to_skip)
 
     tree_html_content = build_tree_html(target_dir, prores_files)
     
