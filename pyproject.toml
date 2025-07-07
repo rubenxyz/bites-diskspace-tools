@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "prores-tools"
+version = "0.1.0"
+description = "A set of tools to convert and manage ProRes video files."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+typer = {extras = ["rich"], version = "^0.9.0"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+prores-tool = "prores_tools.cli:app" 
