@@ -16,9 +16,8 @@ def generate_report(target_dir: Path):
             has_alpha = has_alpha_channel(f)
             prores_files.append({"path": f, "alpha": has_alpha})
 
-    tree_html = build_tree_html(target_dir, prores_files)
+    tree_html_content = build_tree_html(target_dir, prores_files)
     
-    # Load the CSS stylesheet from the package
     css_path = pkg_resources.resource_filename('prores_tools', 'report_style.css')
     stylesheet = CSS(css_path)
 
@@ -30,7 +29,9 @@ def generate_report(target_dir: Path):
         <h1>ProRes Video Report</h1>
         <p><strong>Source Directory:</strong> {target_dir.resolve()}</p>
         <p><strong>Report Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <div class="tree-container">{tree_html}</div>
+        <div class="tree-container">
+            <pre>{tree_html_content}</pre>
+        </div>
         <div class="summary">
             <p><strong>Summary:</strong></p>
             <ul>
@@ -48,7 +49,7 @@ def generate_report(target_dir: Path):
     return report_path
 
 def build_tree_html(root: Path, files: list) -> str:
-    """Builds an HTML table string representation of the file tree."""
+    """Builds a preformatted HTML string of the file tree with aligned tags."""
     tree = {}
     for file_info in files:
         path = file_info['path']
@@ -59,27 +60,39 @@ def build_tree_html(root: Path, files: list) -> str:
         current_level[parts[-1]] = file_info
 
     if not tree:
-        return f"<p>{root.name}/<br>(No ProRes files found)</p>"
+        return f"{root.name}/\n(No ProRes files found)"
     
-    lines = [f'<tr><td colspan="2" style="font-weight: bold;">{root.name}/</td></tr>']
-    
-    def _generate_lines(d, prefix=""):
+    raw_lines = []
+
+    def _generate_raw_lines(d, prefix=""):
         items = sorted(d.items())
         for i, (name, content) in enumerate(items):
-            # Use non-breaking spaces for indentation
-            html_prefix = prefix.replace(" ", "&nbsp;")
             connector = "├── " if i < len(items) - 1 else "└── "
-            
             if isinstance(content, dict) and 'path' not in content:
-                lines.append(f'<tr><td colspan="2">{html_prefix}{connector}{name}/</td></tr>')
-                _generate_lines(content, prefix + ("│   " if i < len(items) - 1 else "    "))
+                raw_lines.append((f"{prefix}{connector}{name}/", None))
+                _generate_raw_lines(content, prefix + ("│   " if i < len(items) - 1 else "    "))
             else:
                 tag = "[ProRes - Alpha Channel]" if content['alpha'] else "[ProRes]"
-                lines.append(f'<tr><td>{html_prefix}{connector}{name}</td><td>{tag}</td></tr>')
+                raw_lines.append((f"{prefix}{connector}{name}", tag))
 
-    _generate_lines(tree)
+    _generate_raw_lines(tree)
+
+    max_len = 0
+    if any(tag for _, tag in raw_lines if tag):
+        max_len = max(len(text) for text, tag in raw_lines if tag)
+
+    padding = 4
+    total_width = max_len + padding
     
-    return f"<table>\n" + "\n".join(lines) + "\n</table>"
+    output_lines = [f"{root.name}/"]
+    for text, tag in raw_lines:
+        if tag:
+            line = text.ljust(total_width) + tag
+            output_lines.append(line)
+        else:
+            output_lines.append(text)
+            
+    return "\n".join(output_lines)
 
 def build_tree_string(root: Path, files: list) -> str:
     """This function is no longer used for PDF generation but kept for potential future use."""
