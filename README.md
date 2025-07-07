@@ -35,26 +35,33 @@ Once installed, you can use the `prores-tool` command from your terminal (ensure
 
 ### Convert Videos
 
-Converts all ProRes `.mov` files from an input directory to H.264 `.mov` files in an output directory. It uses parallel processing for speed.
+This command scans a directory for ProRes `.mov` files and converts them to H.264. It preserves the original audio (including multi-channel audio) and operates directly within the specified directory.
 
 ```sh
-prores-tool convert /path/to/your/videos /path/to/converted/output
+prores-tool convert /path/to/your/videos
 ```
+
+**Workflow:**
+1.  The tool creates two subfolders: `_PROCESSING` and `_CONVERTED`.
+2.  A valid ProRes file (without an alpha channel) is moved into `_PROCESSING`.
+3.  A new H.264 file is created in its original place.
+4.  Upon successful conversion, the original file is moved from `_PROCESSING` to `_CONVERTED` for archival.
+5.  ProRes files with alpha channels are skipped and left in their original location.
 
 **Options:**
 *   `--workers <number>` or `-w <number>`: Set the number of parallel conversion jobs (default is 4).
 
-### Archive Original Files
+### Generate a Report
 
-Moves all ProRes `.mov` files from a source directory to an archive directory.
+This command recursively scans a directory and creates a Markdown file (`prores_report.md`) detailing all the ProRes files it finds.
 
 ```sh
-prores-tool move /path/to/your/videos /path/to/your/archive
+prores-tool report /path/to/your/project_folder
 ```
 
 ### Verify a File
 
-Checks if a single video file is encoded with the ProRes codec.
+Checks if a single video file is encoded with the ProRes codec and whether it contains an alpha channel.
 
 ```sh
 prores-tool verify /path/to/your/video.mov

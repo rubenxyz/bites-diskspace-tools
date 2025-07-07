@@ -1,7 +1,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from . import converter, mover, utils
+from . import converter, utils, reporter
 
 app = typer.Typer(rich_markup_mode="markdown")
 console = Console()
@@ -9,29 +9,29 @@ console = Console()
 @app.command()
 def convert(
     input_dir: Path = typer.Argument(..., help="Directory containing ProRes files to convert.", exists=True, file_okay=False, dir_okay=True, readable=True),
-    output_dir: Path = typer.Argument(..., help="Directory to save converted H.264 files.", file_okay=False, dir_okay=True, writable=True),
     workers: int = typer.Option(4, "--workers", "-w", help="Number of videos to process in parallel.")
 ):
     """
-    Converts all ProRes .mov files in a directory to H.264 format.
+    Converts ProRes files to H.264 in place, managing originals in subfolders.
     """
-    console.print(f"Starting conversion from [cyan]{input_dir}[/cyan] to [cyan]{output_dir}[/cyan]...")
+    console.print(f"Starting conversion process in [cyan]{input_dir}[/cyan]...")
+    console.print("Originals will be moved to [bold]_CONVERTED[/bold] upon success.")
     with console.status("[bold green]Processing videos...", spinner="dots") as status:
-        for result in converter.run_conversion(input_dir, output_dir, workers):
+        for result in converter.run_conversion(input_dir, workers):
             console.print(result)
     console.print("[bold green]Conversion process complete![/bold green]")
 
 @app.command()
-def move(
-    source_dir: Path = typer.Argument(..., help="Directory containing original ProRes files to move.", exists=True, file_okay=False, dir_okay=True, readable=True),
-    archive_dir: Path = typer.Argument(..., help="Directory to archive the ProRes files.", file_okay=False, dir_okay=True, writable=True)
+def report(
+    target_dir: Path = typer.Argument(..., help="Directory to scan for a ProRes report.", exists=True, file_okay=False, dir_okay=True, readable=True)
 ):
     """
-    Moves all ProRes .mov files from a source directory to an archive directory.
+    Generates a Markdown report of all ProRes files in a directory tree.
     """
-    console.print(f"Archiving ProRes files from [cyan]{source_dir}[/cyan] to [cyan]{archive_dir}[/cyan]...")
-    for result in mover.move_prores_files(source_dir, archive_dir):
-        console.print(result)
+    console.print(f"Generating ProRes report for [cyan]{target_dir}[/cyan]...")
+    with console.status("[bold green]Scanning files...", spinner="dots"):
+        report_path = reporter.generate_report(target_dir)
+    console.print(f"[bold green]✓ Report successfully created at:[/bold green] [cyan]{report_path}[/cyan]")
 
 @app.command()
 def verify(
