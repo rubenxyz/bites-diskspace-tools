@@ -50,6 +50,19 @@ prores-tool convert /path/to/your/videos
 **Options:**
 *   `--workers <number>` or `-w <number>`: Set the number of parallel conversion jobs (default is 4).
 
+### Move Preview Files to Trash
+
+This command recursively finds and moves ProRes files to the system's Trash if they meet a specific criteria:
+1. The file must NOT have an alpha channel.
+2. The folder containing the file must end with `.PRV`.
+
+```sh
+prores-tool remove-prv /path/to/your/project_folder
+```
+
+> [!NOTE]
+> This command moves files to the Trash, it does not delete them permanently. A confirmation prompt will appear before any action is taken.
+
 ### Generate a Report
 
 This command recursively scans a directory and creates a PDF file (`prores_report.pdf`) detailing all the ProRes files it finds.

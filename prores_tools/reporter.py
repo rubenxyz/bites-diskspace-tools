@@ -2,19 +2,15 @@ from pathlib import Path
 from datetime import datetime
 from weasyprint import HTML, CSS
 import pkg_resources
-from .utils import is_prores, has_alpha_channel
+from .utils import find_prores_files_fast
 
 def generate_report(target_dir: Path):
     """
     Scans a directory tree, finds all ProRes files, and generates a PDF report.
     """
     report_path = target_dir / "prores_report.pdf"
-    prores_files = []
-
-    for f in target_dir.rglob("*.mov"):
-        if f.is_file() and is_prores(f):
-            has_alpha = has_alpha_channel(f)
-            prores_files.append({"path": f, "alpha": has_alpha})
+    
+    prores_files = find_prores_files_fast(target_dir)
 
     tree_html_content = build_tree_html(target_dir, prores_files)
     

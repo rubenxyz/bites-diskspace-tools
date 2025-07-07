@@ -1,5 +1,7 @@
 import subprocess
 import shutil
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 def is_prores(video_path: str) -> bool:
     """Check if a video file is encoded with ProRes."""
@@ -44,4 +46,30 @@ def has_alpha_channel(video_path: str) -> bool:
         # Pixel formats with alpha usually contain 'a' (e.g., yuva, rgba)
         return 'a' in pix_fmt
     except (subprocess.CalledProcessError, FileNotFoundError):
-        return False 
+        return False
+
+def find_prores_files_fast(scan_dir: Path):
+    """
+    Scans a directory tree in parallel to quickly find all ProRes files,
+    skipping special folders.
+    """
+    all_mov_files = [
+        p for p in scan_dir.rglob("*.mov") 
+        if p.is_file() and not any(part in p.parts for part in ['_PROCESSING', '_CONVERTED', '_ALPHA'])
+    ]
+    
+    prores_files = []
+
+    def _check_file(path):
+        if is_prores(path):
+            has_alpha = has_alpha_channel(path)
+            return {"path": path, "alpha": has_alpha}
+        return None
+
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(_check_file, all_mov_files)
+        for result in results:
+            if result:
+                prores_files.append(result)
+
+    return prores_files 

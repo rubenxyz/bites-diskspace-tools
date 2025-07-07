@@ -1,7 +1,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from . import converter, utils, reporter
+from . import converter, utils, reporter, deleter
 
 app = typer.Typer(rich_markup_mode="markdown")
 console = Console()
@@ -20,6 +20,36 @@ def convert(
         for result in converter.run_conversion(scan_dir, workers):
             console.print(result)
     console.print("[bold green]Conversion process complete![/bold green]")
+
+@app.command(help="Moves ProRes files in folders ending with .PRV to the Trash.")
+def remove_prv(
+    scan_dir: Path = typer.Argument(..., help="Directory to scan for .PRV folders.", exists=True, file_okay=False, dir_okay=True, readable=True),
+):
+    """
+    Finds and moves ProRes files (without alpha) in subfolders ending with .PRV to the Trash.
+    """
+    console.print(f"Scanning [cyan]{scan_dir}[/cyan] for ProRes files in .PRV folders...")
+    with console.status("[bold green]Scanning files...", spinner="dots"):
+        files_to_delete = deleter.remove_prv_files(scan_dir)
+
+    if not files_to_delete:
+        console.print("[bold green]No matching files found to move to Trash.[/bold green]")
+        return
+
+    console.print(f"[bold yellow]Found {len(files_to_delete)} file(s) to move to Trash:[/bold yellow]")
+    for f in files_to_delete:
+        console.print(f"- {f.relative_to(scan_dir)}")
+    
+    confirm = typer.confirm(
+        "Are you sure you want to move these files to the Trash?", 
+        abort=True
+    )
+    
+    console.print("\n[bold]Moving files to Trash...[/bold]")
+    for result in deleter.delete_files(files_to_delete):
+        console.print(result)
+    
+    console.print("\n[bold green]Process complete![/bold green]")
 
 @app.command()
 def report(

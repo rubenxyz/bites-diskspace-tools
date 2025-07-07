@@ -2,7 +2,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .utils import is_prores, has_alpha_channel
+from .utils import find_prores_files_fast
 
 def convert_to_h264(video_path: Path):
     """
@@ -50,15 +50,16 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("ffmpeg not found. Please install ffmpeg.")
 
-    all_prores_files = [f for f in scan_dir.rglob("*.mov") if f.is_file() and is_prores(f)]
+    all_prores_files = find_prores_files_fast(scan_dir)
 
     if not all_prores_files:
         yield "No ProRes .mov files found to convert."
         return
 
     files_to_process = []
-    for f in all_prores_files:
-        if has_alpha_channel(f):
+    for file_info in all_prores_files:
+        f = file_info['path']
+        if file_info['alpha']:
             alpha_dir = f.parent / "_ALPHA"
             alpha_dir.mkdir(exist_ok=True)
             try:
