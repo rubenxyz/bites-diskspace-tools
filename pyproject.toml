@@ -8,11 +8,12 @@ include = ["prores_tools/report_style.css"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-typer = {extras = ["rich"], version = "^0.9.0"}
+typer = {version = "0.9.0", extras = ["rich"]}
 rich = "^13.0.0"
 weasyprint = "57.2"
 pydyf = "0.7.0"
 setuptools = "^68.0.0"
+click = "8.1.3"
 
 [build-system]
 requires = ["poetry-core"]
