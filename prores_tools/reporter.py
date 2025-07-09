@@ -36,9 +36,6 @@ def generate_report(target_dir: Path):
         <h1>Project Asset Report</h1>
         <p><strong>Source Directory:</strong> {target_dir.resolve()}</p>
         <p><strong>Report Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <div class="tree-container">
-            <pre>{tree_html_content}</pre>
-        </div>
         <div class="summary">
             <p><strong>Summary:</strong></p>
             <ul>
@@ -48,6 +45,9 @@ def generate_report(target_dir: Path):
                 <li>Total PSD Files: {len(psd_files)} ({format_size(total_psd_size)})</li>
                 <li style="border-top: 1px solid #ccc; padding-top: 5px; margin-top: 5px;"><strong>Grand Total: {len(all_files)} files ({format_size(grand_total_size)})</strong></li>
             </ul>
+        </div>
+        <div class="tree-container">
+            <pre>{tree_html_content}</pre>
         </div>
     </body>
     </html>
