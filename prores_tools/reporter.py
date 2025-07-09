@@ -8,7 +8,7 @@ def generate_report(target_dir: Path):
     """
     Scans a directory tree, finds all ProRes and PSD files, and generates a PDF report.
     """
-    report_path = target_dir / "prores_report.pdf"
+    report_path = target_dir / f"{target_dir.name}_report.pdf"
     
     folders_to_skip = ['_PROCESSING']
     prores_files = find_prores_files_fast(target_dir, folders_to_ignore=folders_to_skip)
