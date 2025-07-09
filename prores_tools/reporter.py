@@ -12,15 +12,18 @@ def generate_report(target_dir: Path):
     
     folders_to_skip = ['_PROCESSING']
     prores_files = find_prores_files_fast(target_dir, folders_to_ignore=folders_to_skip)
-    psd_files = find_files_by_extension(target_dir, ".psd", folders_to_ignore=folders_to_skip)
+    all_psd_files = find_files_by_extension(target_dir, ".psd", folders_to_ignore=folders_to_skip)
+    
+    # Filter for PSD files over 100MB
+    large_psd_files = [psd for psd in all_psd_files if psd['size'] > 100 * 1024 * 1024]
 
-    all_files = sorted(prores_files + psd_files, key=lambda x: x['path'])
+    all_files = sorted(prores_files + large_psd_files, key=lambda x: x['path'])
 
     # Calculate size totals
     total_prores_size = sum(f['size'] for f in prores_files)
     alpha_size = sum(f['size'] for f in prores_files if f['alpha'])
     no_alpha_size = total_prores_size - alpha_size
-    total_psd_size = sum(f['size'] for f in psd_files)
+    total_psd_size = sum(f['size'] for f in large_psd_files)
     grand_total_size = total_prores_size + total_psd_size
 
     tree_html_content = build_tree_html(target_dir, all_files)
@@ -42,7 +45,7 @@ def generate_report(target_dir: Path):
                 <li>Total ProRes Files: {len(prores_files)} ({format_size(total_prores_size)})</li>
                 <li>  - With Alpha Channel: {sum(1 for f in prores_files if f['alpha'])} ({format_size(alpha_size)})</li>
                 <li>  - Without Alpha Channel: {sum(1 for f in prores_files if not f['alpha'])} ({format_size(no_alpha_size)})</li>
-                <li>Total PSD Files: {len(psd_files)} ({format_size(total_psd_size)})</li>
+                <li>Total PSD Files (&gt;100MB): {len(large_psd_files)} ({format_size(total_psd_size)})</li>
                 <li style="border-top: 1px solid #ccc; padding-top: 5px; margin-top: 5px;"><strong>Grand Total: {len(all_files)} files ({format_size(grand_total_size)})</strong></li>
             </ul>
         </div>
@@ -85,7 +88,7 @@ def build_tree_html(root: Path, files: list) -> str:
                 if content['type'] == 'prores':
                     tag = "[ProRes - Alpha]" if content['alpha'] else "[ProRes]"
                 else:
-                    tag = f"[{content['type'].upper().replace('.', '')}]"
+                    tag = "[PSD >100MB]"
                 
                 size_str = format_size(content['size'])
                 raw_lines.append((f"{prefix}{connector}{name}", tag, size_str))
