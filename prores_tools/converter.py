@@ -138,8 +138,10 @@ def convert_to_h264(video_path: Path, max_retries: int = 2):
         return f"[RETRY ERROR] Conversion failed after {max_retries+1} attempts: {original_path.name} (moved to _FAILED)"
 
 def run_conversion(scan_dir: Path, max_workers: int = 4):
-    """Scans a directory tree and converts all valid ProRes .mov files, with progress tracking."""
+    """Scans a directory tree and converts all valid ProRes .mov files, with progress tracking and live Markdown report."""
     import time
+    import datetime
+    import os
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("ffmpeg not found. Please install ffmpeg.")
 
@@ -174,27 +176,43 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
     failed = 0
     error_summary = []
     start_time = time.time()
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(convert_to_h264, f): f for f in files_to_process}
-        for future in as_completed(futures):
-            result = future.result()
-            processed += 1
-            if result.startswith("Successfully converted"):
-                succeeded += 1
-            elif result.startswith("Moved to _ALPHA"):
-                pass
-            else:
-                failed += 1
-                if result.startswith("["):
-                    error_summary.append(result)
-            elapsed = time.time() - start_time
-            avg_time = elapsed / processed if processed else 0
-            remaining = total - processed
-            est_remaining = avg_time * remaining
-            yield (f"Progress: {processed}/{total} | Succeeded: {succeeded} | Failed: {failed} | Remaining: {remaining} | "
-                   f"Elapsed: {elapsed:.1f}s | Est. Remaining: {est_remaining:.1f}s")
-            yield result
-    if error_summary:
-        yield "\n--- Conversion Error Summary ---"
-        for err in error_summary:
-            yield err 
+    report_path = os.path.join(scan_dir, f"conversion_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    with open(report_path, 'w') as report_file:
+        report_file.write(f"# Conversion Report\n\n")
+        report_file.write(f"**Started:** {datetime.datetime.now().isoformat()}\n\n")
+        report_file.write(f"| File | Status | Message | Timestamp |\n|---|---|---|---|\n")
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(convert_to_h264, f): f for f in files_to_process}
+            for future in as_completed(futures):
+                result = future.result()
+                processed += 1
+                now = datetime.datetime.now().isoformat()
+                if result.startswith("Successfully converted"):
+                    succeeded += 1
+                    status = "COMPLETE"
+                    msg = result.split('\n')[0]
+                elif result.startswith("Moved to _ALPHA"):
+                    status = "ALPHA"
+                    msg = result
+                else:
+                    failed += 1
+                    status = "FAILED"
+                    msg = result.split('\n')[0]
+                    if result.startswith("["):
+                        error_summary.append(result)
+                file_name = str(futures[future].relative_to(scan_dir))
+                report_file.write(f"| {file_name} | {status} | {msg.replace('|','\\|')} | {now} |\n")
+                elapsed = time.time() - start_time
+                avg_time = elapsed / processed if processed else 0
+                remaining = total - processed
+                est_remaining = avg_time * remaining
+                yield (f"Progress: {processed}/{total} | Succeeded: {succeeded} | Failed: {failed} | Remaining: {remaining} | "
+                       f"Elapsed: {elapsed:.1f}s | Est. Remaining: {est_remaining:.1f}s")
+                yield result
+        report_file.write(f"\n**Completed:** {datetime.datetime.now().isoformat()}\n")
+        report_file.write(f"\n**Total:** {total} | **Succeeded:** {succeeded} | **Failed:** {failed}\n")
+        if error_summary:
+            report_file.write(f"\n## Error Summary\n")
+            for err in error_summary:
+                report_file.write(f"- {err}\n")
+    yield f"Conversion report saved to: {report_path}" 
