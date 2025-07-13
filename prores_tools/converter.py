@@ -30,7 +30,10 @@ def convert_to_h264(video_path: Path):
         if not validate_video_file(str(processing_path)):
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"[VALIDATION ERROR] Input file validation failed: {original_path.name} (moved to _FAILED)"
+            return (
+                f"[VALIDATION ERROR] Input file validation failed: {processing_path} (moved to _FAILED)\n"
+                f"Suggestion: Check if the input file is a valid video."
+            )
 
         command = [
             "ffmpeg", "-i", str(processing_path),
@@ -43,15 +46,24 @@ def convert_to_h264(video_path: Path):
         except subprocess.TimeoutExpired:
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"[TIMEOUT ERROR] Conversion timed out for {original_path.name} (moved to _FAILED)"
+            return (
+                f"[TIMEOUT ERROR] Conversion timed out for {processing_path} (moved to _FAILED)\n"
+                f"Suggestion: Try increasing the timeout or check for system performance issues."
+            )
         except subprocess.CalledProcessError as e:
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"[FFMPEG ERROR] Conversion failed for {original_path.name}: {e.stderr.strip()} (moved to _FAILED)"
+            return (
+                f"[FFMPEG ERROR] Conversion failed for {processing_path}: {e.stderr.strip()} (moved to _FAILED)\n"
+                f"Suggestion: Check ffmpeg logs and input file integrity."
+            )
         except Exception as e:
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"[UNEXPECTED ERROR] Conversion failed for {original_path.name}: {str(e)} (moved to _FAILED)"
+            return (
+                f"[UNEXPECTED ERROR] Conversion failed for {processing_path}: {str(e)} (moved to _FAILED)\n"
+                f"Suggestion: Investigate the error and check system resources."
+            )
 
         # Validate output file after conversion
         if output_path.exists() and output_path.stat().st_size > 0 and validate_video_file(str(output_path)):
@@ -62,9 +74,15 @@ def convert_to_h264(video_path: Path):
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
             if not output_path.exists() or output_path.stat().st_size == 0:
-                return f"[FFMPEG ERROR] Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
+                return (
+                    f"[FFMPEG ERROR] Conversion failed (zero size output): {output_path} (moved to _FAILED)\n"
+                    f"Suggestion: Check ffmpeg command and input file."
+                )
             else:
-                return f"[VALIDATION ERROR] Output file validation failed: {original_path.name} (moved to _FAILED)"
+                return (
+                    f"[VALIDATION ERROR] Output file validation failed: {output_path} (moved to _FAILED)\n"
+                    f"Suggestion: Check if the output file is playable."
+                )
     except (subprocess.CalledProcessError, Exception) as e:
         if processing_path.exists():
             failed_path = failed_dir / original_path.name
@@ -102,7 +120,15 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
         yield "No new suitable ProRes files (without alpha) found to convert."
         return
 
+    error_summary = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(convert_to_h264, f): f for f in files_to_process}
         for future in as_completed(futures):
-            yield future.result() 
+            result = future.result()
+            yield result
+            if result.startswith("["):
+                error_summary.append(result)
+    if error_summary:
+        yield "\n--- Conversion Error Summary ---"
+        for err in error_summary:
+            yield err 
