@@ -13,10 +13,12 @@ def convert_to_h264(video_path: Path):
     parent_dir = original_path.parent
     
     processing_dir = parent_dir / "_PROCESSING"
-    converted_dir = parent_dir / "_SOURCE"
+    source_dir = parent_dir / "_SOURCE"
+    failed_dir = parent_dir / "_FAILED"
     
     processing_dir.mkdir(exist_ok=True)
-    converted_dir.mkdir(exist_ok=True)
+    source_dir.mkdir(exist_ok=True)
+    failed_dir.mkdir(exist_ok=True)
 
     processing_path = processing_dir / original_path.name
     output_path = original_path
@@ -33,17 +35,19 @@ def convert_to_h264(video_path: Path):
         subprocess.run(command, check=True, capture_output=True, text=True)
 
         if output_path.exists() and output_path.stat().st_size > 0:
-            converted_path = converted_dir / original_path.name
-            shutil.move(str(processing_path), str(converted_path))
+            source_path = source_dir / original_path.name
+            shutil.move(str(processing_path), str(source_path))
             return f"Successfully converted: {original_path.relative_to(original_path.parents[2])}"
         else:
-            shutil.move(str(processing_path), str(original_path))
-            return f"Conversion failed (zero size output): {original_path.name}"
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
+            return f"Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
     except (subprocess.CalledProcessError, Exception) as e:
         if processing_path.exists():
-            shutil.move(str(processing_path), str(original_path))
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
         error_message = e.stderr if isinstance(e, subprocess.CalledProcessError) else str(e)
-        return f"Conversion failed for {original_path.name}: {error_message}"
+        return f"Conversion failed for {original_path.name}: {error_message} (moved to _FAILED)"
 
 def run_conversion(scan_dir: Path, max_workers: int = 4):
     """Scans a directory tree and converts all valid ProRes .mov files."""
