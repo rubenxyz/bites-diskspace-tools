@@ -61,6 +61,57 @@ def generate_report(target_dir: Path):
     
     return report_path
 
+def generate_conversion_report(target_dir: Path):
+    """
+    Scans a directory tree for _SOURCE, _FAILED, _ALPHA, and _PROCESSING folders and generates a PDF conversion report.
+    """
+    report_path = target_dir / f"{target_dir.name}_conversion_report.pdf"
+
+    def gather_files(folder_name):
+        return list(target_dir.rglob(f'{folder_name}/*'))
+
+    source_files = gather_files('_SOURCE')
+    failed_files = gather_files('_FAILED')
+    alpha_files = gather_files('_ALPHA')
+    processing_files = gather_files('_PROCESSING')
+
+    def file_summary(files):
+        return [(str(f.relative_to(target_dir)), f.stat().st_size) for f in files if f.is_file()]
+
+    html_content = f"""
+    <html>
+    <head></head>
+    <body>
+        <h1>Conversion Report</h1>
+        <p><strong>Source Directory:</strong> {target_dir.resolve()}</p>
+        <p><strong>Report Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <div class="summary">
+            <ul>
+                <li><strong>Successfully Converted (_SOURCE):</strong> {len(source_files)}</li>
+                <li><strong>Failed Conversions (_FAILED):</strong> {len(failed_files)}</li>
+                <li><strong>Alpha Channel Files (_ALPHA):</strong> {len(alpha_files)}</li>
+                <li><strong>Still in Processing (_PROCESSING):</strong> {len(processing_files)}</li>
+            </ul>
+        </div>
+        <h2>Details</h2>
+        <h3>_SOURCE</h3>
+        <pre>{chr(10).join([f'{f[0]} ({format_size(f[1])})' for f in file_summary(source_files)]) or 'None'}</pre>
+        <h3>_FAILED</h3>
+        <pre>{chr(10).join([f'{f[0]} ({format_size(f[1])})' for f in file_summary(failed_files)]) or 'None'}</pre>
+        <h3>_ALPHA</h3>
+        <pre>{chr(10).join([f'{f[0]} ({format_size(f[1])})' for f in file_summary(alpha_files)]) or 'None'}</pre>
+        <h3>_PROCESSING</h3>
+        <pre>{chr(10).join([f'{f[0]} ({format_size(f[1])})' for f in file_summary(processing_files)]) or 'None'}</pre>
+    </body>
+    </html>
+    """
+
+    css_path = pkg_resources.resource_filename('prores_tools', 'report_style.css')
+    stylesheet = CSS(css_path)
+    html_doc = HTML(string=html_content)
+    html_doc.write_pdf(report_path, stylesheets=[stylesheet])
+    return report_path
+
 def build_tree_html(root: Path, files: list) -> str:
     """Builds a preformatted HTML string of the file tree with aligned tags."""
     tree = {}

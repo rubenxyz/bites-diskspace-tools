@@ -82,5 +82,17 @@ def verify(
     else:
         console.print("  - It does not contain an alpha channel.")
 
+@app.command()
+def conversion_report(
+    target_dir: Path = typer.Argument(..., help="Directory to scan for a conversion report.", exists=True, file_okay=False, dir_okay=True, readable=True)
+):
+    """
+    Generates a PDF conversion report of all files in _SOURCE, _FAILED, _ALPHA, and _PROCESSING folders in a directory tree.
+    """
+    console.print(f"Generating Conversion PDF report for [cyan]{target_dir}[/cyan]...")
+    with console.status("[bold green]Scanning files and building conversion report...", spinner="dots"):
+        report_path = reporter.generate_conversion_report(target_dir)
+    console.print(f"[bold green]✓ Conversion report successfully created at:[/bold green] [cyan]{report_path}[/cyan]")
+
 if __name__ == "__main__":
     app() 
