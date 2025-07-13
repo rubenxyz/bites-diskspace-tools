@@ -2,7 +2,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .utils import find_prores_files_fast, validate_video_file
+from .utils import find_prores_files_fast, validate_video_file, compute_sha256
 
 def convert_to_h264(video_path: Path, max_retries: int = 2):
     """
@@ -26,6 +26,16 @@ def convert_to_h264(video_path: Path, max_retries: int = 2):
     attempt = 0
     while attempt <= max_retries:
         try:
+            # Compute input checksum before moving
+            try:
+                input_checksum = compute_sha256(str(original_path))
+            except Exception as e:
+                failed_path = failed_dir / original_path.name
+                shutil.move(str(original_path), str(failed_path))
+                return (
+                    f"[INTEGRITY ERROR] Could not compute checksum for input file: {original_path} (moved to _FAILED)\n"
+                    f"Suggestion: Check if the file is accessible and not corrupted."
+                )
             shutil.move(str(original_path), str(processing_path))
 
             # Validate input file before conversion
@@ -77,11 +87,23 @@ def convert_to_h264(video_path: Path, max_retries: int = 2):
 
             # Validate output file after conversion
             if output_path.exists() and output_path.stat().st_size > 0 and validate_video_file(str(output_path)):
+                # Compute output checksum
+                try:
+                    output_checksum = compute_sha256(str(output_path))
+                except Exception as e:
+                    failed_path = failed_dir / original_path.name
+                    shutil.move(str(processing_path), str(failed_path))
+                    return (
+                        f"[INTEGRITY ERROR] Could not compute checksum for output file: {output_path} (moved to _FAILED)\n"
+                        f"Suggestion: Check disk space and file system integrity."
+                    )
                 source_path = source_dir / original_path.name
                 shutil.move(str(processing_path), str(source_path))
                 if attempt > 0:
-                    return f"Successfully converted after {attempt+1} attempts: {original_path.relative_to(original_path.parents[2])}"
-                return f"Successfully converted: {original_path.relative_to(original_path.parents[2])}"
+                    return (f"Successfully converted after {attempt+1} attempts: {original_path.relative_to(original_path.parents[2])}\n"
+                            f"Input SHA256: {input_checksum}\nOutput SHA256: {output_checksum}")
+                return (f"Successfully converted: {original_path.relative_to(original_path.parents[2])}\n"
+                        f"Input SHA256: {input_checksum}\nOutput SHA256: {output_checksum}")
             else:
                 failed_path = failed_dir / original_path.name
                 shutil.move(str(processing_path), str(failed_path))

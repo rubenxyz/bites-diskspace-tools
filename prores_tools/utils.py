@@ -127,3 +127,17 @@ def validate_video_file(file_path: str) -> bool:
         return result.returncode == 0 and "video" in result.stdout
     except (subprocess.TimeoutExpired, subprocess.CalledProcessError, Exception):
         return False 
+
+def compute_sha256(file_path: str, chunk_size: int = 8192) -> str:
+    """
+    Computes the SHA256 checksum of a file.
+    """
+    import hashlib
+    sha256 = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            sha256.update(data)
+    return sha256.hexdigest() 
