@@ -15,7 +15,7 @@ def convert(
     Recursively converts ProRes files to H.264, managing originals in subfolders.
     """
     console.print(f"Starting recursive conversion scan in [cyan]{scan_dir}[/cyan]...")
-    console.print("Originals will be moved to a [bold]_CONVERTED[/bold] subfolder in their respective directories.")
+    console.print("Originals will be moved to a [bold]_SOURCE[/bold] subfolder in their respective directories.")
     with console.status("[bold green]Processing videos...", spinner="dots") as status:
         for result in converter.run_conversion(scan_dir, workers):
             console.print(result)
@@ -28,7 +28,7 @@ def cleanup(
     """
     Finds and moves two types of files to the Trash:
     - ProRes files in folders ending with .PRV
-    - All ProRes files inside any `_CONVERTED` folder
+    - All ProRes files inside any `_SOURCE` folder
     """
     console.print(f"Scanning [cyan]{scan_dir}[/cyan] for files to clean up...")
     with console.status("[bold green]Scanning files...", spinner="dots"):

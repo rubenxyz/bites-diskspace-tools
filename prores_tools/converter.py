@@ -13,7 +13,7 @@ def convert_to_h264(video_path: Path):
     parent_dir = original_path.parent
     
     processing_dir = parent_dir / "_PROCESSING"
-    converted_dir = parent_dir / "_CONVERTED"
+    converted_dir = parent_dir / "_SOURCE"
     
     processing_dir.mkdir(exist_ok=True)
     converted_dir.mkdir(exist_ok=True)
@@ -50,7 +50,7 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("ffmpeg not found. Please install ffmpeg.")
 
-    folders_to_skip = ['_PROCESSING', '_CONVERTED', '_ALPHA']
+    folders_to_skip = ['_PROCESSING', '_SOURCE', '_ALPHA']
     all_prores_files = find_prores_files_fast(scan_dir, folders_to_ignore=folders_to_skip)
 
     if not all_prores_files:

@@ -16,8 +16,8 @@ def find_files_to_cleanup(scan_dir: Path):
     for file_info in all_prores_files:
         path = file_info['path']
         
-        # Criterion 1: Any ProRes file in a _CONVERTED folder
-        if '_CONVERTED' in path.parts:
+        # Criterion 1: Any ProRes file in a _SOURCE folder
+        if '_SOURCE' in path.parts:
             files_to_trash.append(path)
             continue
 

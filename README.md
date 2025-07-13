@@ -43,9 +43,9 @@ prores-tool convert /path/to/your/videos
 
 **Workflow:**
 1.  The tool scans all folders within the given path for `.mov` files.
-2.  For each folder containing a ProRes file, it creates up to three subfolders: `_PROCESSING`, `_CONVERTED`, and `_ALPHA`.
+2.  For each folder containing a ProRes file, it creates up to three subfolders: `_PROCESSING`, `_SOURCE`, and `_ALPHA`.
 3.  **ProRes files with an alpha channel** are moved directly into the `_ALPHA` subfolder. They are not converted.
-4.  **ProRes files without an alpha channel** are moved to `_PROCESSING`, converted to H.264 (in-place), and then the original ProRes file is moved to `_CONVERTED` for archival.
+4.  **ProRes files without an alpha channel** are moved to `_PROCESSING`, converted to H.264 (in-place), and then the original ProRes file is moved to `_SOURCE` for archival.
 
 **Options:**
 *   `--workers <number>` or `-w <number>`: Set the number of parallel conversion jobs (default is 4).
@@ -53,7 +53,7 @@ prores-tool convert /path/to/your/videos
 ### Cleanup Project Files
 
 This command recursively finds and moves specific types of files to the system's Trash to help clean up a project directory. It targets two specific sets of files:
-1.  All ProRes files located inside any `_CONVERTED` folder.
+1.  All ProRes files located inside any `_SOURCE` folder.
 2.  ProRes files *without an alpha channel* that are inside any folder ending with the `.PRV` extension.
 
 ```sh
