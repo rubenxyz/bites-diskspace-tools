@@ -116,7 +116,8 @@ def convert_to_h264(video_path: Path, max_retries: int = 2):
         return f"[RETRY ERROR] Conversion failed after {max_retries+1} attempts: {original_path.name} (moved to _FAILED)"
 
 def run_conversion(scan_dir: Path, max_workers: int = 4):
-    """Scans a directory tree and converts all valid ProRes .mov files."""
+    """Scans a directory tree and converts all valid ProRes .mov files, with progress tracking."""
+    import time
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("ffmpeg not found. Please install ffmpeg.")
 
@@ -145,14 +146,32 @@ def run_conversion(scan_dir: Path, max_workers: int = 4):
         yield "No new suitable ProRes files (without alpha) found to convert."
         return
 
+    total = len(files_to_process)
+    processed = 0
+    succeeded = 0
+    failed = 0
     error_summary = []
+    start_time = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(convert_to_h264, f): f for f in files_to_process}
         for future in as_completed(futures):
             result = future.result()
+            processed += 1
+            if result.startswith("Successfully converted"):
+                succeeded += 1
+            elif result.startswith("Moved to _ALPHA"):
+                pass
+            else:
+                failed += 1
+                if result.startswith("["):
+                    error_summary.append(result)
+            elapsed = time.time() - start_time
+            avg_time = elapsed / processed if processed else 0
+            remaining = total - processed
+            est_remaining = avg_time * remaining
+            yield (f"Progress: {processed}/{total} | Succeeded: {succeeded} | Failed: {failed} | Remaining: {remaining} | "
+                   f"Elapsed: {elapsed:.1f}s | Est. Remaining: {est_remaining:.1f}s")
             yield result
-            if result.startswith("["):
-                error_summary.append(result)
     if error_summary:
         yield "\n--- Conversion Error Summary ---"
         for err in error_summary:
