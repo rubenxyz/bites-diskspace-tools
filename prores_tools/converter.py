@@ -30,7 +30,7 @@ def convert_to_h264(video_path: Path):
         if not validate_video_file(str(processing_path)):
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"Input file validation failed: {original_path.name} (moved to _FAILED)"
+            return f"[VALIDATION ERROR] Input file validation failed: {original_path.name} (moved to _FAILED)"
 
         command = [
             "ffmpeg", "-i", str(processing_path),
@@ -43,7 +43,15 @@ def convert_to_h264(video_path: Path):
         except subprocess.TimeoutExpired:
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"Conversion timed out for {original_path.name} (moved to _FAILED)"
+            return f"[TIMEOUT ERROR] Conversion timed out for {original_path.name} (moved to _FAILED)"
+        except subprocess.CalledProcessError as e:
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
+            return f"[FFMPEG ERROR] Conversion failed for {original_path.name}: {e.stderr.strip()} (moved to _FAILED)"
+        except Exception as e:
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
+            return f"[UNEXPECTED ERROR] Conversion failed for {original_path.name}: {str(e)} (moved to _FAILED)"
 
         # Validate output file after conversion
         if output_path.exists() and output_path.stat().st_size > 0 and validate_video_file(str(output_path)):
@@ -54,9 +62,9 @@ def convert_to_h264(video_path: Path):
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
             if not output_path.exists() or output_path.stat().st_size == 0:
-                return f"Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
+                return f"[FFMPEG ERROR] Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
             else:
-                return f"Output file validation failed: {original_path.name} (moved to _FAILED)"
+                return f"[VALIDATION ERROR] Output file validation failed: {original_path.name} (moved to _FAILED)"
     except (subprocess.CalledProcessError, Exception) as e:
         if processing_path.exists():
             failed_path = failed_dir / original_path.name
