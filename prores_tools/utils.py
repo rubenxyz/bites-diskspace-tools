@@ -106,3 +106,24 @@ def find_prores_files_fast(scan_dir: Path, folders_to_ignore: list[str] | None =
                 prores_files.append(result)
 
     return prores_files 
+
+def validate_video_file(file_path: str) -> bool:
+    """
+    Uses ffprobe to check if a video file is valid and playable.
+    Returns True if the file is valid, False otherwise.
+    """
+    if not shutil.which("ffprobe"):
+        raise FileNotFoundError("ffprobe not found. Please install ffmpeg.")
+    command = [
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "stream=codec_type",
+        "-of", "csv=p=0",
+        str(file_path)
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+        return result.returncode == 0 and "video" in result.stdout
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, Exception):
+        return False 

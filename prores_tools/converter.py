@@ -2,7 +2,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .utils import find_prores_files_fast
+from .utils import find_prores_files_fast, validate_video_file
 
 def convert_to_h264(video_path: Path):
     """
@@ -26,22 +26,37 @@ def convert_to_h264(video_path: Path):
     try:
         shutil.move(str(original_path), str(processing_path))
 
+        # Validate input file before conversion
+        if not validate_video_file(str(processing_path)):
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
+            return f"Input file validation failed: {original_path.name} (moved to _FAILED)"
+
         command = [
             "ffmpeg", "-i", str(processing_path),
             "-c:v", "libx264", "-crf", "23", "-preset", "medium",
             "-pix_fmt", "yuv420p", "-c:a", "copy",
             "-movflags", "+faststart", "-y", str(output_path)
         ]
-        subprocess.run(command, check=True, capture_output=True, text=True)
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            failed_path = failed_dir / original_path.name
+            shutil.move(str(processing_path), str(failed_path))
+            return f"Conversion timed out for {original_path.name} (moved to _FAILED)"
 
-        if output_path.exists() and output_path.stat().st_size > 0:
+        # Validate output file after conversion
+        if output_path.exists() and output_path.stat().st_size > 0 and validate_video_file(str(output_path)):
             source_path = source_dir / original_path.name
             shutil.move(str(processing_path), str(source_path))
             return f"Successfully converted: {original_path.relative_to(original_path.parents[2])}"
         else:
             failed_path = failed_dir / original_path.name
             shutil.move(str(processing_path), str(failed_path))
-            return f"Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
+            if not output_path.exists() or output_path.stat().st_size == 0:
+                return f"Conversion failed (zero size output): {original_path.name} (moved to _FAILED)"
+            else:
+                return f"Output file validation failed: {original_path.name} (moved to _FAILED)"
     except (subprocess.CalledProcessError, Exception) as e:
         if processing_path.exists():
             failed_path = failed_dir / original_path.name
